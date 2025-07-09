@@ -1,2 +1,3 @@
-#Credit risk Assesment Project
-#This project evaluates the credit risk of a user using regression techniques
+#hi everyone,
+#This is ajzel
+#This folder contains all of the proojects i have done
