@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Financial AI Chatbot</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <h1>Financial AI Chatbot</h1>
+    <div id="chatbox">
+        <p><b>Bot:</b> Hi there! Ask me about 'stock price', 'market news', 'show data', or say 'goodbye'.</p>
+    </div>
+    <input type="text" id="userInput" placeholder="Type your message...">
+    <button onclick="send()">Send</button>
+
+    <script>
+        function send() {
+            var userText = $("#userInput").val();
+            $("#chatbox").append("<p><b>You:</b> " + userText + "</p>");
+
+            $.get("/get", { msg: userText }).done(function(data) {
+                $("#chatbox").append("<p><b>Bot:</b> " + data + "</p>");
+                $("#userInput").val("");
+            });
+        }
+    </script>
+</body>
+</html>
