@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Face Recognition</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%);
+            min-height: 100vh;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        .app-container {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .logo {
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #00d4ff;
+            margin-bottom: 20px;
+        }
+
+        .main-content {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .video-section {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 800px;
+        }
+
+        .video-container {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        #video {
+            width: 100%;
+            max-width: 640px;
+            height: auto;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 212, 255, 0.3);
+        }
+
+        #overlay {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            pointer-events: none;
+            border-radius: 15px;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover:before {
+            left: 100%;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #00d4ff, #0099cc);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(45deg, #ff4757, #c44569);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(45deg, #2ed573, #1e90ff);
+            color: white;
+        }
+
+        .btn:disabled {
+            background: linear-gradient(45deg, #555, #333);
+            cursor: not-allowed;
+        }
+
+        .status-bar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(0, 212, 255, 0.1);
+            border-radius: 10px;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ff4757;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.active {
+            background: #2ed573;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .face-database {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .face-database h3 {
+            margin-bottom: 15px;
+            color: #00d4ff;
+        }
+
+        .face-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+
+        .face-thumbnail {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #00d4ff, #0099cc);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .add-face-form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .input-field {
+            padding: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+        }
+
+        .input-field::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+            width: 100%;
+            max-width: 800px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            background: linear-gradient(45deg, #00d4ff, #2ed573);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .recognition-result {
+            background: rgba(46, 213, 115, 0.2);
+            border: 1px solid rgba(46, 213, 115, 0.5);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .recognition-result.unknown {
+            background: rgba(255, 71, 87, 0.2);
+            border-color: rgba(255, 71, 87, 0.5);
+        }
+
+        .error-message {
+            background: rgba(255, 71, 87, 0.2);
+            border: 1px solid rgba(255, 71, 87, 0.5);
+            color: #ffcdd2;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            text-align: center;
+        }
+
+        .face-match-overlay {
+            position: absolute;
+            background: rgba(0, 212, 255, 0.9);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: bold;
+            pointer-events: none;
+        }
+
+        @media (max-width: 1024px) {
+            .app-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                border-right: none;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 15px;
+            }
+            
+            .video-section {
+                padding: 20px;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn {
+                width: 200px;
+            }
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #00d4ff;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="sidebar">
+            <div class="logo">🎭 FaceRec AI</div>
+            
+            <div class="face-database">
+                <h3>Known Faces</h3>
+                <div id="faceList">
+                    <!-- Face items will be dynamically added here -->
+                </div>
+                
+                <div class="add-face-form">
+                    <input type="text" id="nameInput" class="input-field" placeholder="Enter name...">
+                    <button id="addFaceBtn" class="btn btn-success">Add Current Face</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="video-section">
+                <div class="status-bar">
+                    <div class="status-dot" id="statusDot"></div>
+                    <span id="statusText">Camera Disconnected</span>
+                </div>
+
+                <div class="video-container">
+                    <video id="video" autoplay muted playsinline></video>
+                    <canvas id="overlay"></canvas>
+                </div>
+
+                <div class="controls">
+                    <button id="startBtn" class="btn btn-primary">Start Recognition</button>
+                    <button id="stopBtn" class="btn btn-danger" disabled>Stop Camera</button>
+                    <button id="captureBtn" class="btn btn-success" disabled>Capture Photo</button>
+                    <button id="clearBtn" class="btn" style="background: linear-gradient(45deg, #ff9f43, #feca57);">Clear Database</button>
+                </div>
+
+                <div id="errorMessage" class="error-message" style="display: none;"></div>
+                <div id="recognitionResult" class="recognition-result" style="display: none;"></div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="detectedCount">0</div>
+                    <div class="stat-label">Faces Detected</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="recognizedCount">0</div>
+                    <div class="stat-label">Faces Recognized</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="confidence">0%</div>
+                    <div class="stat-label">Avg Confidence</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="fps">0</div>
+                    <div class="stat-label">FPS</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="databaseSize">0</div>
+                    <div class="stat-label">Known Faces</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class FaceRecognitionApp {
+            constructor() {
+                this.video = document.getElementById('video');
+                this.overlay = document.getElementById('overlay');
+                this.ctx = this.overlay.getContext('2d');
+                
+                // UI Elements
+                this.startBtn = document.getElementById('startBtn');
+                this.stopBtn = document.getElementById('stopBtn');
+                this.captureBtn = document.getElementById('captureBtn');
+                this.addFaceBtn = document.getElementById('addFaceBtn');
+                this.clearBtn = document.getElementById('clearBtn');
+                this.nameInput = document.getElementById('nameInput');
+                this.statusDot = document.getElementById('statusDot');
+                this.statusText = document.getElementById('statusText');
+                this.errorMessage = document.getElementById('errorMessage');
+                this.recognitionResult = document.getElementById('recognitionResult');
+                this.faceList = document.getElementById('faceList');
+                
+                // State
+                this.stream = null;
+                this.isRecognizing = false;
+                this.faceDetector = null;
+                this.faceDatabase = JSON.parse(localStorage.getItem('faceDatabase') || '[]');
+                this.lastFrameTime = 0;
+                this.frameCount = 0;
+                this.detectedFaces = [];
+                this.recognitionStats = {
+                    detected: 0,
+                    recognized: 0,
+                    totalConfidence: 0,
+                    samples: 0
+                };
+                
+                this.init();
+            }
+
+            async init() {
+                this.setupEventListeners();
+                await this.initializeFaceDetection();
+                this.updateFaceList();
+                this.updateDatabaseSize();
+            }
+
+            setupEventListeners() {
+                this.startBtn.addEventListener('click', () => this.startRecognition());
+                this.stopBtn.addEventListener('click', () => this.stopRecognition());
+                this.captureBtn.addEventListener('click', () => this.capturePhoto());
+                this.addFaceBtn.addEventListener('click', () => this.addFaceToDatabase());
+                this.clearBtn.addEventListener('click', () => this.clearDatabase());
+                
+                this.nameInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.addFaceToDatabase();
+                });
+                
+                this.video.addEventListener('loadedmetadata', () => {
+                    this.overlay.width = this.video.videoWidth;
+                    this.overlay.height = this.video.videoHeight;
+                });
+            }
+
+            async initializeFaceDetection() {
+                try {
+                    if ('FaceDetector' in window) {
+                        this.faceDetector = new FaceDetector({
+                            maxDetectedFaces: 5,
+                            fastMode: false
+                        });
+                    } else {
+                        console.log('Using mock face detection');
+                    }
+                } catch (error) {
+                    console.log('Face Detection API not available');
+                }
+            }
+
+            async startRecognition() {
+                try {
+                    this.hideError();
+                    this.updateStatus('Connecting...', false);
+                    
+                    const constraints = {
+                        video: {
+                            width: { ideal: 640 },
+                            height: { ideal: 480 },
+                            frameRate: { ideal: 15 },
+                            facingMode: 'user'
+                        }
+                    };
+
+                    this.stream = await navigator.mediaDevices.getUserMedia(constraints);
+                    this.video.srcObject = this.stream;
+                    
+                    this.video.onloadedmetadata = () => {
+                        this.overlay.width = this.video.videoWidth;
+                        this.overlay.height = this.video.videoHeight;
+                        this.isRecognizing = true;
+                        this.recognitionLoop();
+                        this.updateStatus('Recognition Active', true);
+                    };
+
+                    this.startBtn.disabled = true;
+                    this.stopBtn.disabled = false;
+                    this.captureBtn.disabled = false;
+                    this.addFaceBtn.disabled = false;
+
+                } catch (error) {
+                    console.error('Error accessing camera:', error);
+                    this.showError('Failed to access camera. Please check permissions.');
+                    this.updateStatus('Connection Failed', false);
+                }
+            }
+
+            stopRecognition() {
+                if (this.stream) {
+                    this.stream.getTracks().forEach(track => track.stop());
+                    this.stream = null;
+                }
+                
+                this.video.srcObject = null;
+                this.isRecognizing = false;
+                
+                const now = performance.now();
+                if (!this.lastDetectionTime) this.lastDetectionTime = now;
+                if (now - this.lastDetectionTime < 200) {
+                    requestAnimationFrame(() => this.recognitionLoop());
+                    return;
+                }
+                this.lastDetectionTime = now;
+
+                this.clearOverlay();
+                this.updateStatus('Camera Disconnected', false);
+                
+                this.startBtn.disabled = false;
+                this.stopBtn.disabled = true;
+                this.captureBtn.disabled = true;
+                this.addFaceBtn.disabled = true;
+                
+                this.resetStats();
+            }
+
+            async recognitionLoop() {
+                if (!this.isRecognizing || this.video.readyState !== 4) {
+                    if (this.isRecognizing) {
+                        requestAnimationFrame(() => this.recognitionLoop());
+                    }
+                    return;
+                }
+
+                // Calculate FPS
+                const currentTime = performance.now();
+                if (currentTime - this.lastFrameTime >= 1000) {
+                    document.getElementById('fps').textContent = this.frameCount;
+                    this.frameCount = 0;
+                    this.lastFrameTime = currentTime;
+                }
+                this.frameCount++;
+
+                
+                const now = performance.now();
+                if (!this.lastDetectionTime) this.lastDetectionTime = now;
+                if (now - this.lastDetectionTime < 200) {
+                    requestAnimationFrame(() => this.recognitionLoop());
+                    return;
+                }
+                this.lastDetectionTime = now;
+
+                this.clearOverlay();
+
+                try {
+                    let faces = [];
+                    
+                    if (this.faceDetector) {
+                        faces = await this.faceDetector.detect(this.video);
+                    } else {
+                        // Mock detection for demo
+                        if (Math.random() > 0.4) {
+                            faces = [{
+                                boundingBox: {
+                                    left: this.overlay.width * (0.2 + Math.random() * 0.3),
+                                    top: this.overlay.height * (0.1 + Math.random() * 0.3),
+                                    width: this.overlay.width * (0.3 + Math.random() * 0.2),
+                                    height: this.overlay.height * (0.4 + Math.random() * 0.2)
+                                },
+                                confidence: 0.8 + Math.random() * 0.15
+                            }];
+                        }
+                    }
+
+                    this.detectedFaces = faces;
+                    this.drawFaces(faces);
+                    this.recognizeFaces(faces);
+                    this.updateRecognitionStats(faces);
+
+                } catch (error) {
+                    console.error('Recognition error:', error);
+                }
+
+                if (this.isRecognizing) {
+                    requestAnimationFrame(() => this.recognitionLoop());
+                }
+            }
+
+            drawFaces(faces) {
+                this.ctx.lineWidth = 3;
+                this.ctx.font = '14px Arial';
+
+                faces.forEach((face, index) => {
+                    const { left, top, width, height } = face.boundingBox;
+                    
+                    // Scale coordinates
+                    const scaleX = this.overlay.width / this.video.videoWidth;
+                    const scaleY = this.overlay.height / this.video.videoHeight;
+                    
+                    const x = left * scaleX;
+                    const y = top * scaleY;
+                    const w = width * scaleX;
+                    const h = height * scaleY;
+
+                    // Check for recognition match
+                    const match = this.findFaceMatch(face);
+                    
+                    if (match) {
+                        // Green box for recognized face
+                        this.ctx.strokeStyle = '#2ed573';
+                        this.ctx.fillStyle = '#2ed573';
+                        this.ctx.strokeRect(x, y, w, h);
+                        this.ctx.fillText(`${match.name}`, x, y - 10);
+                        this.ctx.fillText(`${Math.round(match.confidence * 100)}%`, x, y + h + 20);
+                    } else {
+                        // Blue box for unknown face
+                        this.ctx.strokeStyle = '#00d4ff';
+                        this.ctx.fillStyle = '#00d4ff';
+                        this.ctx.strokeRect(x, y, w, h);
+                        this.ctx.fillText(`Unknown`, x, y - 10);
+                        this.ctx.fillText(`${Math.round((face.confidence || 0.85) * 100)}%`, x, y + h + 20);
+                    }
+                });
+            }
+
+            findFaceMatch(face) {
+                // Simple mock matching based on position and size
+                // In a real app, this would use facial feature comparison
+                if (this.faceDatabase.length === 0) return null;
+                
+                const faceCenter = {
+                    x: face.boundingBox.left + face.boundingBox.width / 2,
+                    y: face.boundingBox.top + face.boundingBox.height / 2
+                };
+                
+                // Mock matching logic
+                const mockMatch = this.faceDatabase[Math.floor(Math.random() * this.faceDatabase.length)];
+                
+                if (Math.random() > 0.3) { // 70% chance of "recognition"
+                    return {
+                        name: mockMatch.name,
+                        confidence: 0.75 + Math.random() * 0.2
+                    };
+                }
+                
+                return null;
+            }
+
+            recognizeFaces(faces) {
+                if (faces.length === 0) {
+                    this.recognitionResult.style.display = 'none';
+                    return;
+                }
+
+                const recognizedFaces = faces.map(face => this.findFaceMatch(face)).filter(match => match);
+                
+                if (recognizedFaces.length > 0) {
+                    const names = recognizedFaces.map(match => match.name).join(', ');
+                    const avgConfidence = recognizedFaces.reduce((sum, match) => sum + match.confidence, 0) / recognizedFaces.length;
+                    
+                    this.recognitionResult.innerHTML = `
+                        <strong>✓ Recognized:</strong> ${names}<br>
+                        <small>Confidence: ${Math.round(avgConfidence * 100)}%</small>
+                    `;
+                    this.recognitionResult.className = 'recognition-result';
+                    this.recognitionResult.style.display = 'block';
+                } else if (faces.length > 0) {
+                    this.recognitionResult.innerHTML = `
+                        <strong>? Unknown Face Detected</strong><br>
+                        <small>Add to database to recognize</small>
+                    `;
+                    this.recognitionResult.className = 'recognition-result unknown';
+                    this.recognitionResult.style.display = 'block';
+                }
+            }
+
+            updateRecognitionStats(faces) {
+                this.recognitionStats.detected = faces.length;
+                
+                const recognized = faces.filter(face => this.findFaceMatch(face)).length;
+                this.recognitionStats.recognized = recognized;
+                
+                if (faces.length > 0) {
+                    const totalConf = faces.reduce((sum, face) => sum + (face.confidence || 0.85), 0);
+                    this.recognitionStats.totalConfidence += totalConf;
+                    this.recognitionStats.samples += faces.length;
+                }
+                
+                document.getElementById('detectedCount').textContent = this.recognitionStats.detected;
+                document.getElementById('recognizedCount').textContent = this.recognitionStats.recognized;
+                
+                if (this.recognitionStats.samples > 0) {
+                    const avgConf = this.recognitionStats.totalConfidence / this.recognitionStats.samples;
+                    document.getElementById('confidence').textContent = Math.round(avgConf * 100) + '%';
+                }
+            }
+
+            addFaceToDatabase() {
+                const name = this.nameInput.value.trim();
+                if (!name) {
+                    this.showError('Please enter a name');
+                    return;
+                }
+                
+                if (this.detectedFaces.length === 0) {
+                    this.showError('No face detected. Make sure camera is active.');
+                    return;
+                }
+
+                // In a real app, this would capture and process facial features
+                const faceData = {
+                    id: Date.now(),
+                    name: name,
+                    timestamp: new Date().toISOString(),
+                    // Mock face features
+                    features: {
+                        center: {
+                            x: this.detectedFaces[0].boundingBox.left + this.detectedFaces[0].boundingBox.width / 2,
+                            y: this.detectedFaces[0].boundingBox.top + this.detectedFaces[0].boundingBox.height / 2
+                        },
+                        size: this.detectedFaces[0].boundingBox.width * this.detectedFaces[0].boundingBox.height
+                    }
+                };
+                
+                this.faceDatabase.push(faceData);
+                this.saveFaceDatabase();
+                this.updateFaceList();
+                this.updateDatabaseSize();
+                
+                this.nameInput.value = '';
+                this.showSuccess(`Added ${name} to database!`);
+            }
+
+            clearDatabase() {
+                if (confirm('Are you sure you want to clear all face data?')) {
+                    this.faceDatabase = [];
+                    this.saveFaceDatabase();
+                    this.updateFaceList();
+                    this.updateDatabaseSize();
+                    this.showSuccess('Database cleared!');
+                }
+            }
+
+            updateFaceList() {
+                this.faceList.innerHTML = '';
+                
+                this.faceDatabase.forEach(face => {
+                    const faceItem = document.createElement('div');
+                    faceItem.className = 'face-item';
+                    faceItem.innerHTML = `
+                        <div class="face-thumbnail">${face.name.charAt(0).toUpperCase()}</div>
+                        <div style="flex: 1;">
+                            <div style="font-weight: bold;">${face.name}</div>
+                            <div style="font-size: 12px; opacity: 0.7;">
+                                Added: ${new Date(face.timestamp).toLocaleDateString()}
+                            </div>
+                        </div>
+                        <button onclick="app.removeFace(${face.id})" style="
+                            background: rgba(255, 71, 87, 0.2);
+                            border: 1px solid rgba(255, 71, 87, 0.5);
+                            color: #ff4757;
+                            border-radius: 5px;
+                            padding: 5px 10px;
+                            font-size: 12px;
+                            cursor: pointer;
+                        ">Remove</button>
+                    `;
+                    this.faceList.appendChild(faceItem);
+                });
+
+                if (this.faceDatabase.length === 0) {
+                    this.faceList.innerHTML = '<div style="text-align: center; opacity: 0.5; font-size: 14px;">No faces added yet</div>';
+                }
+            }
+
+            removeFace(id) {
+                this.faceDatabase = this.faceDatabase.filter(face => face.id !== id);
+                this.saveFaceDatabase();
+                this.updateFaceList();
+                this.updateDatabaseSize();
+            }
+
+            updateDatabaseSize() {
+                document.getElementById('databaseSize').textContent = this.faceDatabase.length;
+            }
+
+            saveFaceDatabase() {
+                // In a real app, you wouldn't use localStorage due to the restriction
+                // This is just for demo purposes - use in-memory storage instead
+                try {
+                    localStorage.setItem('faceDatabase', JSON.stringify(this.faceDatabase));
+                } catch (e) {
+                    console.log('Storage not available, using memory only');
+                }
+            }
+
+            capturePhoto() {
+                if (!this.video.videoWidth || !this.video.videoHeight) return;
+
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                canvas.width = this.video.videoWidth;
+                canvas.height = this.video.videoHeight;
+                
+                // Draw video frame and overlay
+                ctx.drawImage(this.video, 0, 0);
+                ctx.drawImage(this.overlay, 0, 0);
+                
+                // Download
+                const link = document.createElement('a');
+                link.download = `face-recognition-${Date.now()}.png`;
+                link.href = canvas.toDataURL();
+                link.click();
+            }
+
+            updateStatus(text, active) {
+                this.statusText.textContent = text;
+                if (active) {
+                    this.statusDot.classList.add('active');
+                } else {
+                    this.statusDot.classList.remove('active');
+                }
+            }
+
+            clearOverlay() {
+                this.ctx.clearRect(0, 0, this.overlay.width, this.overlay.height);
+            }
+
+            resetStats() {
+                this.recognitionStats = { detected: 0, recognized: 0, totalConfidence: 0, samples: 0 };
+                document.getElementById('detectedCount').textContent = '0';
+                document.getElementById('recognizedCount').textContent = '0';
+                document.getElementById('confidence').textContent = '0%';
+                document.getElementById('fps').textContent = '0';
+                this.recognitionResult.style.display = 'none';
+            }
+
+            showError(message) {
+                this.errorMessage.textContent = message;
+                this.errorMessage.style.display = 'block';
+                setTimeout(() => this.hideError(), 5000);
+            }
+
+            showSuccess(message) {
+                // Temporarily use error message element for success
+                this.errorMessage.textContent = message;
+                this.errorMessage.style.background = 'rgba(46, 213, 115, 0.2)';
+                this.errorMessage.style.borderColor = 'rgba(46, 213, 115, 0.5)';
+                this.errorMessage.style.color = '#c8e6c9';
+                this.errorMessage.style.display = 'block';
+                setTimeout(() => {
+                    this.hideError();
+                    // Reset to error styling
+                    this.errorMessage.style.background = 'rgba(255, 71, 87, 0.2)';
+                    this.errorMessage.style.borderColor = 'rgba(255, 71, 87, 0.5)';
+                    this.errorMessage.style.color = '#ffcdd2';
+                }, 3000);
+            }
+
+            hideError() {
+                this.errorMessage.style.display = 'none';
+            }
+        }
+
+        // Initialize the app
+        let app;
+        document.addEventListener('DOMContentLoaded', () => {
+            app = new FaceRecognitionApp();
+        });
+    </script>
+</body>
+</html>
