@@ -1,0 +1,40 @@
+Restaurant Cuisine Classification - Results
+================================================================================
+
+Best Model: Logistic Regression
+Accuracy: 0.3584
+
+Detailed Classification Report:
+--------------------------------------------------------------------------------
+              precision    recall  f1-score   support
+
+    American       0.36      0.45      0.40        56
+       Asian       0.00      0.00      0.00        15
+      Bakery       0.00      0.00      0.00       124
+   Beverages       0.00      0.00      0.00        16
+     Biryani       0.00      0.00      0.00        22
+      Burger       0.00      0.00      0.00        23
+        Cafe       0.31      0.03      0.06       124
+     Chinese       0.00      0.00      0.00       171
+ Continental       1.00      0.02      0.04        47
+    Desserts       0.25      0.03      0.06        30
+    European       0.50      0.17      0.25        12
+   Fast Food       1.00      0.01      0.01       135
+ Finger Food       0.00      0.00      0.00        16
+Healthy Food       0.00      0.00      0.00        11
+   Ice Cream       0.00      0.00      0.00        36
+      Indian       0.45      0.50      0.48        10
+     Italian       0.10      0.02      0.04        47
+    Japanese       0.00      0.00      0.00        14
+     Mexican       0.00      0.00      0.00        12
+      Mithai       0.00      0.00      0.00        49
+     Mughlai       0.00      0.00      0.00        43
+North Indian       0.36      1.00      0.53       599
+       Pizza       0.00      0.00      0.00        46
+   Raw Meats       0.00      0.00      0.00        22
+South Indian       0.00      0.00      0.00        53
+ Street Food       0.00      0.00      0.00        47
+
+    accuracy                           0.36      1780
+   macro avg       0.17      0.09      0.07      1780
+weighted avg       0.27      0.36      0.20      1780
